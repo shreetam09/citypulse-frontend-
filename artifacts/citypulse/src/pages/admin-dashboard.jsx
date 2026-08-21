@@ -285,7 +285,7 @@ export function AdminDashboard() {
                     <tr>
                       <th>Complaint Reference ID</th>
                       <th>Ward & Coordinates</th>
-                      <th>Category & Priority</th>
+                      <th style={{ minWidth: '240px' }}>Category & Priority</th>
                       <th>Completion Status</th>
                       <th>Assigned Department</th>
                       <th>Before / After Evidence</th>

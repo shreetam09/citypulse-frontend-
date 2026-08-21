@@ -1728,6 +1728,48 @@
   gap: 4px;
 }
 
+/* Category & Priority Column Width & Spacing */
+.category-priority-cell {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  min-width: 240px;
+}
+.category-priority-cell strong {
+  font-size: 13px;
+  font-weight: 600;
+  color: #171717;
+  white-space: nowrap;
+}
+.priority-tag {
+  display: inline-flex;
+  align-items: center;
+  font-size: 10px;
+  font-weight: 700;
+  padding: 3px 8px;
+  border-radius: 9999px;
+  letter-spacing: 0.03em;
+  white-space: nowrap;
+}
+.priority-tag.critical {
+  background: #171717;
+  color: #ffffff;
+}
+.priority-tag.high {
+  background: #ffffff;
+  color: #171717;
+  border: 1px solid #171717;
+}
+.priority-tag.medium {
+  background: #f3f3f3;
+  color: #6f6f6f;
+  border: 1px solid #e5e7eb;
+}
+.priority-tag.low {
+  background: #f8f9fa;
+  color: #9ca3af;
+}
+
 /* Completion Badges */
 .status-badge-complete {
   display: inline-flex;
