@@ -985,14 +985,21 @@
   border-color: #171717;
 }
 .kpi-icon-wrapper {
-  width: 40px;
-  height: 40px;
+  width: 44px;
+  height: 44px;
   border-radius: 12px;
   background: #f3f3f3;
-  display: grid;
-  place-items: center;
+  display: flex;
+  align-items: center;
+  justify-content: center;
   color: #171717;
   flex: none;
+  line-height: 0;
+}
+.kpi-icon-wrapper svg {
+  display: block;
+  margin: 0 auto;
+  flex-shrink: 0;
 }
 .kpi-icon-wrapper.alert {
   background: #171717;
