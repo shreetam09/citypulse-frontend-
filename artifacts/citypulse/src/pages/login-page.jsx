@@ -122,13 +122,13 @@ export function LoginPage() {
                 <Phone size={16} />
                 <input 
                   type="tel" 
-                  placeholder="+91 98765 43210" 
+                  placeholder="9876543210 (Demo Citizen)" 
                   value={phone} 
                   onChange={(e) => setPhone(e.target.value)}
                   required
                 />
               </div>
-              <small className="field-hint">Used for SMS status updates from {selectedCity.shortBody}</small>
+              <small className="field-hint">Database Citizen Login: <strong>9876543210</strong> / Password: <strong>password123</strong></small>
             </div>
           )}
 
@@ -140,7 +140,7 @@ export function LoginPage() {
                   <User size={16} />
                   <input 
                     type="text" 
-                    placeholder={role === 'operator' ? 'BMC-EMP-9042' : 'BBMP-OFF-4109'} 
+                    placeholder={role === 'operator' ? 'OP-BMC-804 (Demo Operator)' : 'OFF-BMC-104 (Demo Officer)'} 
                     value={staffId} 
                     onChange={(e) => setStaffId(e.target.value)}
                     required
@@ -160,6 +160,9 @@ export function LoginPage() {
                     required
                   />
                 </div>
+                <small className="field-hint">
+                  {role === 'operator' ? 'Database Operator Login: OP-BMC-804 / Password: operator123' : 'Database Officer Login: OFF-BMC-104 / Password: officer123'}
+                </small>
               </div>
             </>
           )}

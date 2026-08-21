@@ -355,21 +355,93 @@ router.get("/v1/analytics/locations", (_req, res) => {
   });
 });
 
+const users = [
+  {
+    userId: "usr_cit_101",
+    name: "Ananya Das",
+    email: "citizen@citypulse.app",
+    phone: "9876543210",
+    password: "password123",
+    role: "CITIZEN",
+  },
+  {
+    userId: "usr_op_804",
+    name: "Rajesh Sharma",
+    email: "operator@citypulse.app",
+    phone: "9876543211",
+    password: "operator123",
+    staffId: "OP-BMC-804",
+    role: "OPERATOR",
+  },
+  {
+    userId: "usr_off_104",
+    name: "Suresh Patil",
+    email: "officer@citypulse.app",
+    phone: "9876543212",
+    password: "officer123",
+    badgeId: "OFF-BMC-104",
+    role: "FIELD_OFFICER",
+  },
+];
+
 router.get("/v1/analytics/resolution-time", (_req, res) => {
   res.json({ "Road Maintenance": 38.4, Sanitation: 22.1, Electrical: 55.7, Drainage: 18.2 });
 });
 
 router.post("/v1/auth/login", (req, res) => {
-  const { email, password, role } = req.body || {};
+  const { email, phone, staffId, badgeId, password, role } = req.body || {};
+  const identifier = email || phone || staffId || badgeId;
+
+  let user = users.find(u => 
+    (email && u.email.toLowerCase() === email.toLowerCase()) ||
+    (phone && u.phone === phone) ||
+    (staffId && u.staffId === staffId) ||
+    (badgeId && u.badgeId === badgeId)
+  );
+
+  if (!user) {
+    user = {
+      userId: `usr_${Math.floor(Math.random() * 90000) + 10000}`,
+      name: identifier ? identifier.split("@")[0] : "CityPulse User",
+      email: email || `${identifier || 'user'}@citypulse.app`,
+      phone: phone || "9876543210",
+      password: password || "password123",
+      role: (role || "CITIZEN").toUpperCase(),
+    };
+    users.push(user);
+  }
+
   res.json({
-    accessToken: "mock_jwt_access_token_citypulse_2026",
-    refreshToken: "mock_jwt_refresh_token_citypulse_2026",
+    accessToken: `eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.CityPulseToken_${user.userId}`,
+    refreshToken: `eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.CityPulseRefreshToken_${user.userId}`,
     expiresIn: 3600,
     user: {
-      userId: "usr_7f1a2b",
-      name: email ? email.split("@")[0] : "Suresh Patil",
-      role: role || "OPERATOR",
+      userId: user.userId,
+      name: user.name,
+      email: user.email,
+      phone: user.phone,
+      role: user.role,
     },
+  });
+});
+
+router.post("/v1/auth/register", (req, res) => {
+  const { name, email, phone, password } = req.body || {};
+  const newUser = {
+    userId: `usr_${Math.floor(Math.random() * 90000) + 10000}`,
+    name: name || "New Citizen",
+    email: email || "citizen@example.com",
+    phone: phone || "9876543210",
+    password: password || "password123",
+    role: "CITIZEN",
+  };
+  users.push(newUser);
+  res.status(201).json({
+    userId: newUser.userId,
+    name: newUser.name,
+    email: newUser.email,
+    role: newUser.role,
+    createdAt: new Date().toISOString(),
   });
 });
 

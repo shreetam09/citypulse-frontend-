@@ -4,7 +4,9 @@ import com.citypulse.model.AiAnalysis;
 import com.citypulse.model.Incident;
 import com.citypulse.model.Location;
 import com.citypulse.model.TimelineEntry;
+import com.citypulse.model.User;
 import com.citypulse.repository.IncidentRepository;
+import com.citypulse.repository.UserRepository;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.CommandLineRunner;
 import org.springframework.stereotype.Component;
@@ -19,8 +21,56 @@ public class DataInitializer implements CommandLineRunner {
     @Autowired
     private IncidentRepository incidentRepository;
 
+    @Autowired
+    private UserRepository userRepository;
+
     @Override
     public void run(String... args) throws Exception {
+        // Seed Pre-configured User Accounts
+        if (userRepository.count() == 0) {
+            User citizenUser = new User(
+                "usr_cit_101",
+                "Ananya Das",
+                "citizen@citypulse.app",
+                "9876543210",
+                "password123",
+                "CITIZEN",
+                null, null,
+                "mumbai",
+                Instant.now()
+            );
+
+            User operatorUser = new User(
+                "usr_op_804",
+                "Rajesh Sharma",
+                "operator@citypulse.app",
+                "9876543211",
+                "operator123",
+                "OPERATOR",
+                "OP-BMC-804",
+                null,
+                "mumbai",
+                Instant.now()
+            );
+
+            User officerUser = new User(
+                "usr_off_104",
+                "Suresh Patil",
+                "officer@citypulse.app",
+                "9876543212",
+                "officer123",
+                "FIELD_OFFICER",
+                null,
+                "OFF-BMC-104",
+                "mumbai",
+                Instant.now()
+            );
+
+            userRepository.saveAll(Arrays.asList(citizenUser, operatorUser, officerUser));
+            System.out.println("✅ Seed Users (Citizen, Operator, Officer) Initialized in Database!");
+        }
+
+        // Seed Sample Incidents
         if (incidentRepository.count() == 0) {
             Incident inc1 = new Incident(
                 "CP-2026-001042",
@@ -86,7 +136,7 @@ public class DataInitializer implements CommandLineRunner {
             );
 
             incidentRepository.saveAll(Arrays.asList(inc1, inc2, inc3));
-            System.out.println("✅ Sample Seed Incidents Initialized in Spring Boot H2 Database!");
+            System.out.println("✅ Sample Seed Incidents Initialized in Spring Boot Database!");
         }
     }
 }
