@@ -340,8 +340,8 @@ export function AdminDashboard() {
                           </td>
                           <td>
                             <div className="evidence-badge-cell">
-                              <span className="evidence-tag before">📷 BEFORE</span>
-                              {isComplete && <span className="evidence-tag after">✅ AFTER</span>}
+                              <span className="evidence-tag before"><Image size={11} /> BEFORE</span>
+                              {isComplete && <span className="evidence-tag after"><CheckCircle2 size={11} /> AFTER</span>}
                             </div>
                           </td>
                           <td>
@@ -450,7 +450,7 @@ export function AdminDashboard() {
                   </div>
                   <div className="box-meta">
                     <strong>
-                      Completion Status: {selectedComplaint.status === 'RESOLVED' ? 'COMPLETE ✅' : 'IN-PROGRESS 🚧'}
+                      Completion Status: {selectedComplaint.status === 'RESOLVED' ? 'COMPLETE' : 'IN-PROGRESS'}
                     </strong>
                     <p>Assigned Officer: <strong>{selectedComplaint.officer || selectedComplaint.department}</strong></p>
                     <p>SLA Resolution Target: <strong>24.0 Hours</strong></p>

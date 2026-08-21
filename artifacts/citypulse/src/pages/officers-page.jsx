@@ -126,8 +126,8 @@ export function OfficersPage({ activeCityId }) {
           <div className="duty-filter-chips">
             {[
               { id: 'All', label: 'All Officers' },
-              { id: 'ON_DUTY', label: '🟢 On Duty' },
-              { id: 'OFF_DUTY', label: '⚪ Off Duty' }
+              { id: 'ON_DUTY', label: 'On Duty' },
+              { id: 'OFF_DUTY', label: 'Off Duty' }
             ].map(f => (
               <button 
                 key={f.id}
@@ -163,7 +163,7 @@ export function OfficersPage({ activeCityId }) {
                 </div>
 
                 <span className={`duty-badge ${officer.status.toLowerCase()}`}>
-                  {officer.status === 'ON_DUTY' ? '🟢 On Duty' : '⚪ Off Duty'}
+                  {officer.status === 'ON_DUTY' ? 'On Duty' : 'Off Duty'}
                 </span>
               </div>
 

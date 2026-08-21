@@ -257,13 +257,13 @@ function OfficerPage() {
                 className={`duty-switch-btn ${dutyState === 'ON_DUTY' ? 'active-onduty' : ''}`}
                 onClick={() => handleDutyChangeRequest('ON_DUTY')}
               >
-                <span className="pulse-green"/> 🟢 ON DUTY
+                <span className="pulse-green"/> ON DUTY
               </button>
               <button 
                 className={`duty-switch-btn ${dutyState === 'OFF_DUTY' ? 'active-offduty' : ''}`}
                 onClick={() => handleDutyChangeRequest('OFF_DUTY')}
               >
-                ⚪ OFF DUTY
+                OFF DUTY
               </button>
             </div>
 
@@ -282,7 +282,7 @@ function OfficerPage() {
           <div className="off-duty-banner">
             <CircleAlert size={18} />
             <div>
-              <strong>⚪ SHIFT ENDED / OFF DUTY MODE</strong>
+              <strong>SHIFT ENDED / OFF DUTY MODE</strong>
               <p>You are currently set to Off Duty. Authentication is required to resume On-Duty status.</p>
             </div>
             <button className="resume-duty-btn" onClick={() => handleDutyChangeRequest('ON_DUTY')}>
