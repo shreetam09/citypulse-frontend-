@@ -261,15 +261,61 @@ router.patch("/v1/admin/incidents/:incidentId/priority", (req, res) => {
   return res.json(incident);
 });
 
-router.post("/v1/admin/incidents/:incidentId/assign", (req, res) => {
+const DEPARTMENTS = [
+  { id: "dept-pwd-01", name: "Public Works Department (PWD)", active: true },
+  { id: "dept-san-02", name: "Sanitation & Solid Waste Management", active: true },
+  { id: "dept-elec-03", name: "Electrical & Street Lighting", active: true },
+  { id: "dept-drain-04", name: "Stormwater & Drainage", active: true }
+];
+
+const DIVISIONS = [
+  { id: "div-north-101", name: "North Zone", zone: "North", active: true },
+  { id: "div-south-102", name: "South Zone", zone: "South", active: true },
+  { id: "div-central-103", name: "Central Zone", zone: "Central", active: true }
+];
+
+const TEAMS = [
+  { id: "team-road-a", name: "Road Maintenance Team A", active: true },
+  { id: "team-waste-b", name: "Sanitation Crew B", active: true },
+  { id: "team-elec-c", name: "Electrical Unit C", active: true }
+];
+
+// Entity Lookup Endpoints (CONFLICT-011)
+router.get(["/v1/admin/departments", "/api/v1/admin/departments"], (_req, res) => res.json(DEPARTMENTS));
+router.get(["/v1/admin/departments/:deptId/divisions", "/api/v1/admin/departments/:deptId/divisions"], (_req, res) => res.json(DIVISIONS));
+router.get(["/v1/admin/divisions/:divId/teams", "/api/v1/admin/divisions/:divId/teams"], (_req, res) => res.json(TEAMS));
+
+router.post(["/v1/admin/incidents/:incidentId/assign", "/api/v1/admin/incidents/:incidentId/assign"], (req, res) => {
   const incident = findIncident(req.params.incidentId);
   if (!incident) return res.status(404).json({ error: { code: "NOT_FOUND", message: "Incident not found" } });
-  incident.department = req.body.department;
-  incident.division = req.body.division;
-  incident.team = req.body.team;
-  incident.assignment = { department: req.body.department, division: req.body.division, team: req.body.team, assignedAt: new Date().toISOString() };
+
+  const { departmentId, divisionId, teamId, department, division, team } = req.body || {};
+  
+  const deptObj = DEPARTMENTS.find(d => d.id === departmentId);
+  const divObj = DIVISIONS.find(d => d.id === divisionId);
+  const teamObj = TEAMS.find(t => t.id === teamId);
+
+  const deptName = deptObj ? deptObj.name : (department || "Public Works");
+  const divName = divObj ? divObj.name : (division || "Central Zone");
+  const teamName = teamObj ? teamObj.name : (team || "Team A");
+
+  incident.departmentId = departmentId || "dept-pwd-01";
+  incident.divisionId = divisionId || "div-central-103";
+  incident.teamId = teamId || "team-road-a";
+  incident.department = deptName;
+  incident.division = divName;
+  incident.team = teamName;
+  incident.assignment = {
+    departmentId: incident.departmentId,
+    divisionId: incident.divisionId,
+    teamId: incident.teamId,
+    department: deptName,
+    division: divName,
+    team: teamName,
+    assignedAt: new Date().toISOString()
+  };
   incident.status = "ASSIGNED";
-  incident.latestUpdate = `Assigned to ${incident.department} · ${incident.division}`;
+  incident.latestUpdate = `Assigned to ${deptName} · ${divName}`;
   incident.timeline.push({ status: "ASSIGNED", at: new Date().toISOString(), note: incident.latestUpdate });
   return res.json(incident);
 });
