@@ -224,10 +224,14 @@ export function AnalyticsPage({ activeCityId }) {
               <tbody>
                 {cityObj.departments.map((dept, idx) => (
                   <tr key={idx}>
-                    <td><strong>{dept.name}</strong></td>
-                    <td>{dept.head}</td>
-                    <td>{dept.phone}</td>
-                    <td><span className="rating-badge">Active ●</span></td>
+                    <td><strong style={{ whiteSpace: 'nowrap' }}>{dept.name}</strong></td>
+                    <td style={{ whiteSpace: 'nowrap' }}>{dept.head}</td>
+                    <td style={{ whiteSpace: 'nowrap' }}>{dept.phone}</td>
+                    <td style={{ whiteSpace: 'nowrap' }}>
+                      <span className="rating-badge active-dept-badge">
+                        <span className="green-status-dot" /> Active
+                      </span>
+                    </td>
                   </tr>
                 ))}
               </tbody>
