@@ -3,11 +3,16 @@
   "version": "0.0.0",
   "license": "MIT",
   "scripts": {
-    "preinstall": "sh -c 'rm -f package-lock.json yarn.lock; case \"$npm_config_user_agent\" in pnpm/*) ;; *) echo \"Use pnpm instead\" >&2; exit 1 ;; esac'",
-    "build": "pnpm -r --if-present run build",
+    "build": "npm run build --workspaces --if-present",
     "typecheck:libs": "echo 'JavaScript libraries ok'",
     "typecheck": "echo 'JavaScript codebase ok'"
   },
+  "workspaces": [
+    "artifacts/*",
+    "lib/*",
+    "lib/integrations/*",
+    "scripts"
+  ],
   "private": true,
   "dependencies": {
     "@replit/connectors-sdk": "^0.4.1"
