@@ -216,8 +216,9 @@ function Timeline({ detail }) {
         return <div className={`timeline-item ${i === events.length - 1 ? 'last' : ''}`} key={`${event.status}-${eventDate}-${i}`}><span className="timeline-dot">{i < events.length - 1 ? <Check size={12}/> : <span />}</span><div><strong>{statusLabels[event.status] || event.status}</strong><span>{formatDate(eventDate)}</span>{note && <p>{note}</p>}</div></div>;
     })}</div>;
 }
-function IncidentDetailPage({ operator = false }) {
-    const { id = 'CP-24081' } = useParams();
+function IncidentDetailPage({ operator = false, params: propParams }) {
+    const hookParams = useParams();
+    const id = propParams?.id || hookParams?.id || 'CP-24081';
     const query = operator ? useGetAdminIncident(id) : useGetIncident(id);
     const fallback = seeded.find((x) => x.incidentId === id || x.incidentNumber === id) || seeded[0];
     const incident = useFallback(query.data, { ...fallback, aiAnalysis: { category: fallback.category, confidence: fallback.aiConfidence || .92, severity: fallback.severity, severityLabel: fallback.severity > 3 ? 'Needs attention' : 'Routine', modelVersion: 'CP Vision 2.4', detectedFeatures: ['Road surface', 'Vehicle lane', 'Standing water'] }, assignment: { department: fallback.department, division: fallback.division, team: fallback.team, assignedAt: fallback.reportedAt }, timeline: undefined });
@@ -636,8 +637,8 @@ function OfficerDetailPage() {
       </main>
     </div>;
 }
-function OperatorRouteGuard({ component: Component }) {
-    const isAuth = typeof window !== 'undefined' && localStorage.getItem('cp_operator_auth') === 'true';
+function OperatorRouteGuard({ component: Component, ...props }) {
+    const isAuth = typeof window !== 'undefined' && (localStorage.getItem('cp_operator_auth') === 'true' || Boolean(localStorage.getItem('cp_access_token')));
 
     if (!isAuth) {
         return <div className="cp-wrap auth-restriction-screen">
@@ -652,11 +653,11 @@ function OperatorRouteGuard({ component: Component }) {
         </div>;
     }
 
-    return <Component />;
+    return <Component {...props} />;
 }
 
-function CitizenRouteGuard({ component: Component }) {
-    const isAuth = typeof window !== 'undefined' && localStorage.getItem('cp_citizen_auth') === 'true';
+function CitizenRouteGuard({ component: Component, ...props }) {
+    const isAuth = typeof window !== 'undefined' && (localStorage.getItem('cp_citizen_auth') === 'true' || Boolean(localStorage.getItem('cp_access_token')));
 
     if (!isAuth) {
         return <div className="cp-wrap auth-restriction-screen">
@@ -671,10 +672,9 @@ function CitizenRouteGuard({ component: Component }) {
         </div>;
     }
 
-    return <Component />;
+    return <Component {...props} />;
 }
 
-function CitizenIncidentRoute() { return <IncidentDetailPage />; }
 function Router() {
     const [location] = useLocation();
     return <ErrorBoundary resetKey={location}>
@@ -682,16 +682,16 @@ function Router() {
         <Route path="/" component={HomePage}/>
         <Route path="/login" component={LoginPage}/>
         {/* Protected Citizen Routes */}
-        <Route path="/report" component={() => <CitizenRouteGuard component={ReportPage}/>}/>
-        <Route path="/portal" component={() => <CitizenRouteGuard component={UserPortal}/>}/>
-        <Route path="/incidents" component={() => <CitizenRouteGuard component={IncidentsPage}/>}/>
-        <Route path="/incidents/:id" component={() => <CitizenRouteGuard component={CitizenIncidentRoute}/>}/>
+        <Route path="/report" component={(props) => <CitizenRouteGuard component={ReportPage} {...props} />}/>
+        <Route path="/portal" component={(props) => <CitizenRouteGuard component={UserPortal} {...props} />}/>
+        <Route path="/incidents" component={(props) => <CitizenRouteGuard component={IncidentsPage} {...props} />}/>
+        <Route path="/incidents/:id">{(params) => <CitizenRouteGuard component={IncidentDetailPage} params={params} />}</Route>
 
         {/* Protected Municipal Command Center & Admin Routes */}
-        <Route path="/admin" component={() => <OperatorRouteGuard component={AdminDashboard}/>}/>
-        <Route path="/admin/officers" component={() => <OperatorRouteGuard component={OfficersPage}/>}/>
-        <Route path="/analytics" component={() => <OperatorRouteGuard component={AnalyticsPage}/>}/>
-        <Route path="/admin/incidents/:id" component={() => <OperatorRouteGuard component={() => <IncidentDetailPage operator/>}/>}/>
+        <Route path="/admin" component={(props) => <OperatorRouteGuard component={AdminDashboard} {...props} />}/>
+        <Route path="/admin/officers" component={(props) => <OperatorRouteGuard component={OfficersPage} {...props} />}/>
+        <Route path="/analytics" component={(props) => <OperatorRouteGuard component={AnalyticsPage} {...props} />}/>
+        <Route path="/admin/incidents/:id">{(params) => <OperatorRouteGuard component={IncidentDetailPage} operator params={params} />}</Route>
 
         <Route path="/officer" component={OfficerPage}/>
         <Route path="/officer/incidents/:id" component={OfficerDetailPage}/>
