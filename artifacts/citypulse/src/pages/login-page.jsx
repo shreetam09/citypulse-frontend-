@@ -81,7 +81,10 @@ export function LoginPage() {
       }
     } catch (err) {
       setStatus('error');
-      setErrorMsg(err.data?.message || (isRegister ? 'Registration failed. Email may already exist.' : 'Invalid email or password'));
+      const backendMsg = err.data?.details?.fieldErrors?.[0]?.message 
+        || err.data?.message 
+        || err.message;
+      setErrorMsg(backendMsg || (isRegister ? 'Registration failed. Email may already exist.' : 'Invalid email or password'));
     }
   };
 
