@@ -25,6 +25,9 @@ export function LoginPage() {
     setErrorMsg('');
     setSuccessMsg('');
     
+    const cleanEmail = email.trim();
+    const cleanPhone = phone.trim();
+
     try {
       if (isRegister) {
         // Register Citizen
@@ -32,9 +35,9 @@ export function LoginPage() {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify({
-            name: name || 'Citizen User',
-            email,
-            phone: phone || '+919876543210',
+            name: name.trim() || 'Citizen User',
+            email: cleanEmail,
+            phone: cleanPhone || '+919876543210',
             password
           })
         });
@@ -43,7 +46,7 @@ export function LoginPage() {
         const loginData = await customFetch('/api/v1/auth/login', {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ email, password })
+          body: JSON.stringify({ email: cleanEmail, password })
         });
 
         localStorage.setItem('cp_access_token', loginData.accessToken);
@@ -58,7 +61,7 @@ export function LoginPage() {
         const data = await customFetch('/api/v1/auth/login', {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ email, password })
+          body: JSON.stringify({ email: cleanEmail, password })
         });
         
         localStorage.setItem('cp_access_token', data.accessToken);
