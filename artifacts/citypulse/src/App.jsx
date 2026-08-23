@@ -255,37 +255,106 @@ function AssignmentPanel({ incident, id, onToast }) {
     const qc = useQueryClient();
     const assign = useAssignIncident();
 
-    const teamOptions = [
-        { label: 'Road Maintenance Team B (South Zone)', teamId: 'team-road-b', divisionId: 'div-roads', departmentId: 'dept-public-works' },
-        { label: 'Water & Drainage Unit C', teamId: 'team-water-c', divisionId: 'div-water', departmentId: 'dept-public-works' },
-        { label: 'Electrical Maintenance Team A', teamId: 'team-elec-a', divisionId: 'div-electrical', departmentId: 'dept-public-works' },
-        { label: 'Sanitation & Waste Crew D', teamId: 'team-sanit-d', divisionId: 'div-sanitation', departmentId: 'dept-environment' },
-        { label: 'Parks & Green Cover Unit', teamId: 'team-parks', divisionId: 'div-parks', departmentId: 'dept-environment' },
-    ];
+    const [departments, setDepartments] = useState([]);
+    const [divisions, setDivisions] = useState([]);
+    const [teams, setTeams] = useState([]);
 
-    const [selectedIdx, setSelectedIdx] = useState(0);
-    const selected = teamOptions[selectedIdx];
+    const [deptId, setDeptId] = useState('');
+    const [divId, setDivId] = useState('');
+    const [teamId, setTeamId] = useState('');
+    const [notes, setNotes] = useState('');
+    const [loadingDepts, setLoadingDepts] = useState(false);
+
+    // Fetch departments on mount
+    useState(() => {
+        setLoadingDepts(true);
+        customFetch('/api/v1/admin/departments', { method: 'GET' })
+            .then((data) => {
+                const list = Array.isArray(data) ? data : data?.content || [];
+                setDepartments(list);
+                if (list.length > 0) {
+                    setDeptId(list[0].id);
+                }
+            })
+            .catch(() => setDepartments([]))
+            .finally(() => setLoadingDepts(false));
+    });
+
+    // Fetch divisions when department changes
+    const handleDeptChange = (newDeptId) => {
+        setDeptId(newDeptId);
+        setDivId('');
+        setTeamId('');
+        setDivisions([]);
+        setTeams([]);
+        if (!newDeptId) return;
+        customFetch(`/api/v1/admin/departments/${newDeptId}/divisions`, { method: 'GET' })
+            .then((data) => {
+                const list = Array.isArray(data) ? data : data?.content || [];
+                setDivisions(list);
+                if (list.length > 0) {
+                    setDivId(list[0].id);
+                    // Also fetch teams for the first division
+                    customFetch(`/api/v1/admin/divisions/${list[0].id}/teams`, { method: 'GET' })
+                        .then((tData) => {
+                            const tList = Array.isArray(tData) ? tData : tData?.content || [];
+                            setTeams(tList);
+                            if (tList.length > 0) setTeamId(tList[0].id);
+                        })
+                        .catch(() => setTeams([]));
+                }
+            })
+            .catch(() => setDivisions([]));
+    };
+
+    // Fetch teams when division changes
+    const handleDivChange = (newDivId) => {
+        setDivId(newDivId);
+        setTeamId('');
+        setTeams([]);
+        if (!newDivId) return;
+        customFetch(`/api/v1/admin/divisions/${newDivId}/teams`, { method: 'GET' })
+            .then((data) => {
+                const list = Array.isArray(data) ? data : data?.content || [];
+                setTeams(list);
+                if (list.length > 0) setTeamId(list[0].id);
+            })
+            .catch(() => setTeams([]));
+    };
+
+    // Auto-fetch divisions when departments load
+    if (departments.length > 0 && deptId && divisions.length === 0 && !loadingDepts) {
+        handleDeptChange(deptId);
+    }
+
+    const selectedTeamName = teams.find(t => t.id === teamId)?.name || 'team';
 
     const handleAssign = () => {
+        if (!deptId || !divId || !teamId) {
+            onToast('Please select department, division, and team.');
+            return;
+        }
         assign.mutate({
             incidentId: id,
             data: {
-                teamId: selected.teamId,
-                divisionId: selected.divisionId,
-                departmentId: selected.departmentId,
-                notes: `Dispatched to ${selected.label}`
+                departmentId: deptId,
+                divisionId: divId,
+                teamId: teamId,
+                notes: notes || `Dispatched to ${selectedTeamName}`
             }
         }, {
             onSuccess: () => {
                 qc.invalidateQueries({ queryKey: getGetAdminIncidentQueryKey(id) });
                 qc.invalidateQueries({ queryKey: getListAdminIncidentsQueryKey() });
-                onToast(`Assigned to ${selected.label} successfully!`);
+                onToast(`Assigned to ${selectedTeamName} successfully!`);
             },
-            onError: () => {
-                onToast(`Dispatched to ${selected.label} (Recorded).`);
+            onError: (err) => {
+                onToast(err?.message || `Assignment failed. Please try again.`);
             }
         });
     };
+
+    const selectStyle = { flex: 1, padding: '10px 14px', borderRadius: '8px', border: '1px solid #e2e8f0', fontSize: '13px', background: '#fff' };
 
     return (
         <div className="cp-card detail-panel" style={{ marginTop: '16px' }}>
@@ -293,19 +362,25 @@ function AssignmentPanel({ incident, id, onToast }) {
                 <span><Users size={16} /> Crew & Team Assignment</span>
                 <span className="small-label">{incident.status === 'ASSIGNED' ? 'Assigned' : 'Awaiting Assignment'}</span>
             </div>
-            <div style={{ display: 'flex', gap: '10px', marginTop: '12px', alignItems: 'center' }}>
-                <select 
-                    value={selectedIdx} 
-                    onChange={(e) => setSelectedIdx(Number(e.target.value))}
-                    style={{ flex: 1, padding: '10px 14px', borderRadius: '8px', border: '1px solid #e2e8f0', fontSize: '14px', background: '#fff' }}
-                >
-                    {teamOptions.map((opt, i) => <option key={i} value={i}>{opt.label}</option>)}
+            <div style={{ display: 'grid', gap: '10px', marginTop: '12px' }}>
+                <select value={deptId} onChange={(e) => handleDeptChange(e.target.value)} style={selectStyle} data-testid="select-department">
+                    <option value="">— Select Department —</option>
+                    {departments.map((d) => <option key={d.id} value={d.id}>{d.name}</option>)}
                 </select>
+                <select value={divId} onChange={(e) => handleDivChange(e.target.value)} style={selectStyle} disabled={!deptId || divisions.length === 0} data-testid="select-division">
+                    <option value="">— Select Division —</option>
+                    {divisions.map((d) => <option key={d.id} value={d.id}>{d.name}{d.zone ? ` (${d.zone})` : ''}</option>)}
+                </select>
+                <select value={teamId} onChange={(e) => setTeamId(e.target.value)} style={selectStyle} disabled={!divId || teams.length === 0} data-testid="select-team">
+                    <option value="">— Select Team —</option>
+                    {teams.map((t) => <option key={t.id} value={t.id}>{t.name}</option>)}
+                </select>
+                <input type="text" value={notes} onChange={(e) => setNotes(e.target.value)} placeholder="Dispatch notes (optional)" style={{ ...selectStyle, height: '38px' }} data-testid="input-dispatch-notes" />
                 <button 
                     className="pill-button" 
                     onClick={handleAssign}
-                    disabled={assign.isPending}
-                    style={{ whiteSpace: 'nowrap' }}
+                    disabled={assign.isPending || !teamId}
+                    style={{ whiteSpace: 'nowrap', marginTop: '4px' }}
                 >
                     {assign.isPending ? 'Dispatching…' : 'Dispatch Team ➔'}
                 </button>
