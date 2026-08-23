@@ -27,13 +27,18 @@ const statusLabels = { SUBMITTED: 'Received', AI_ANALYSIS: 'Reviewing', AWAITING
 const categoryLabels = { POTHOLE: 'Pothole', WATERLOGGING: 'Waterlogging', GARBAGE: 'Garbage', ILLEGAL_DUMPING: 'Illegal dumping', BROKEN_STREETLIGHT: 'Streetlight', SEWAGE_OVERFLOW: 'Sewage overflow', DAMAGED_SIDEWALK: 'Sidewalk', FALLEN_TREE: 'Fallen tree', OTHER: 'Other' };
 const priorityLabels = { LOW: 'Low', MEDIUM: 'Medium', HIGH: 'High', CRITICAL: 'Critical' };
 function formatDate(value) {
-    if (!value)
-        return 'Just now';
-    return new Intl.DateTimeFormat('en-IN', { day: 'numeric', month: 'short', hour: 'numeric', minute: '2-digit' }).format(new Date(value));
+    if (!value) return 'Just now';
+    try {
+        const d = new Date(value);
+        if (isNaN(d.getTime())) return 'Recently';
+        return new Intl.DateTimeFormat('en-IN', { day: 'numeric', month: 'short', hour: 'numeric', minute: '2-digit' }).format(d);
+    } catch {
+        return 'Recently';
+    }
 }
 function useFallback(data, fallback) { return data ?? fallback; }
-function statusClass(status) { return `status status-${status.toLowerCase()}`; }
-function priorityClass(priority) { return `priority priority-${priority.toLowerCase()}`; }
+function statusClass(status) { return `status status-${(status || 'submitted').toLowerCase()}`; }
+function priorityClass(priority) { return `priority priority-${(priority || 'low').toLowerCase()}`; }
 
 const useCreateIncidentFormData = () => {
     return useMutation({

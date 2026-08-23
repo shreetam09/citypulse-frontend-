@@ -23,10 +23,11 @@ function DefaultFallback({ error, resetError }) {
           This part of the app hit an error. The rest of the app is still
           running.
         </p>
-        {/* Dev only: messages can carry API responses and other internals. */}
-        {import.meta.env.DEV ? (<pre className="mt-4 overflow-x-auto rounded bg-gray-100 p-3 text-left text-xs text-gray-800">
-            {error.message || String(error)}
-          </pre>) : null}
+        {error?.message ? (
+          <pre className="mt-4 overflow-x-auto rounded bg-gray-100 p-3 text-left text-xs text-red-600 font-mono">
+            {error.message}
+          </pre>
+        ) : null}
         <button type="button" onClick={resetError} className="mt-4 rounded bg-gray-900 px-4 py-2 text-sm text-white hover:bg-gray-700">
           Try again
         </button>
