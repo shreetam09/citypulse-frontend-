@@ -1,55 +1,53 @@
 import React, { useState } from 'react';
 import { Link, useLocation } from 'wouter';
-import { User, Shield, Wrench, ArrowRight, Building2, CheckCircle2, KeyRound, Phone, MapPin } from 'lucide-react';
+import { User, Shield, Wrench, ArrowRight, Building2, CheckCircle2, KeyRound, Phone, MapPin, Mail, AlertCircle } from 'lucide-react';
 import { INDIA_CITIES } from '../lib/india-cities.js';
+import { customFetch } from '@workspace/api-client-react';
 
 export function LoginPage() {
   const [, setLocation] = useLocation();
   const [role, setRole] = useState('citizen'); // 'citizen' | 'operator' | 'officer'
   const [city, setCity] = useState('mumbai');
-  const [phone, setPhone] = useState('');
-  const [staffId, setStaffId] = useState('');
+  const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
-  const [success, setSuccess] = useState(false);
+  const [status, setStatus] = useState('idle'); // 'idle' | 'loading' | 'error'
+  const [errorMsg, setErrorMsg] = useState('');
 
   const selectedCity = INDIA_CITIES[city] || INDIA_CITIES.mumbai;
 
-  const handleLogin = (e) => {
+  const handleLogin = async (e) => {
     e.preventDefault();
-    setSuccess(true);
-    if (role === 'operator') {
-      localStorage.setItem('cp_operator_auth', 'true');
-    } else if (role === 'citizen') {
-      localStorage.setItem('cp_citizen_auth', 'true');
-    }
-    setTimeout(() => {
-      if (role === 'operator') {
+    setStatus('loading');
+    setErrorMsg('');
+    
+    try {
+      const data = await customFetch('/api/v1/auth/login', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ email, password })
+      });
+      
+      localStorage.setItem('cp_access_token', data.accessToken);
+      if (data.refreshToken) {
+        localStorage.setItem('cp_refresh_token', data.refreshToken);
+      }
+      
+      const userRole = data.user?.role;
+      
+      if (userRole === 'OPERATOR' || userRole === 'ADMIN') {
+        localStorage.setItem('cp_operator_auth', 'true');
         setLocation('/admin');
-      } else if (role === 'officer') {
+      } else if (userRole === 'FIELD_OFFICER') {
+        localStorage.setItem('cp_officer_auth', 'true');
         setLocation('/officer');
       } else {
+        localStorage.setItem('cp_citizen_auth', 'true');
         setLocation('/portal');
       }
-    }, 600);
-  };
-
-  const handleQuickDemo = (demoRole) => {
-    setRole(demoRole);
-    setSuccess(true);
-    if (demoRole === 'operator') {
-      localStorage.setItem('cp_operator_auth', 'true');
-    } else if (demoRole === 'citizen') {
-      localStorage.setItem('cp_citizen_auth', 'true');
+    } catch (err) {
+      setStatus('error');
+      setErrorMsg(err.data?.message || 'Invalid email or password');
     }
-    setTimeout(() => {
-      if (demoRole === 'operator') {
-        setLocation('/admin');
-      } else if (demoRole === 'officer') {
-        setLocation('/officer');
-      } else {
-        setLocation('/portal');
-      }
-    }, 400);
   };
 
   return (
@@ -115,82 +113,49 @@ export function LoginPage() {
 
         {/* Form Body */}
         <form onSubmit={handleLogin} className="login-form">
-          {role === 'citizen' && (
-            <div className="form-group">
-              <label>Mobile Number (for OTP verification)</label>
-              <div className="input-with-icon">
-                <Phone size={16} />
-                <input 
-                  type="tel" 
-                  placeholder="9876543210 (Demo Citizen)" 
-                  value={phone} 
-                  onChange={(e) => setPhone(e.target.value)}
-                  required
-                />
-              </div>
-              <small className="field-hint">Database Citizen Login: <strong>9876543210</strong> / Password: <strong>password123</strong></small>
+          {status === 'error' && (
+            <div style={{ color: '#ef4444', display: 'flex', alignItems: 'center', gap: '8px', marginBottom: '16px', fontSize: '14px', background: '#fef2f2', border: '1px solid #fee2e2', padding: '10px 14px', borderRadius: '8px' }}>
+              <AlertCircle size={16} />
+              <span>{errorMsg}</span>
             </div>
           )}
 
-          {(role === 'operator' || role === 'officer') && (
-            <>
-              <div className="form-group">
-                <label>{role === 'operator' ? 'Operator Employee ID' : 'Officer ID / Badge Number'}</label>
-                <div className="input-with-icon">
-                  <User size={16} />
-                  <input 
-                    type="text" 
-                    placeholder={role === 'operator' ? 'OP-BMC-804 (Demo Operator)' : 'OFF-BMC-104 (Demo Officer)'} 
-                    value={staffId} 
-                    onChange={(e) => setStaffId(e.target.value)}
-                    required
-                  />
-                </div>
-              </div>
+          <div className="form-group">
+            <label>Email Address</label>
+            <div className="input-with-icon">
+              <Mail size={16} />
+              <input 
+                type="email" 
+                placeholder="user@example.com" 
+                value={email} 
+                onChange={(e) => setEmail(e.target.value)}
+                required
+              />
+            </div>
+          </div>
 
-              <div className="form-group">
-                <label>Municipal Secure Password</label>
-                <div className="input-with-icon">
-                  <KeyRound size={16} />
-                  <input 
-                    type="password" 
-                    placeholder="••••••••" 
-                    value={password} 
-                    onChange={(e) => setPassword(e.target.value)}
-                    required
-                  />
-                </div>
-                <small className="field-hint">
-                  {role === 'operator' ? 'Database Operator Login: OP-BMC-804 / Password: operator123' : 'Database Officer Login: OFF-BMC-104 / Password: officer123'}
-                </small>
-              </div>
-            </>
-          )}
+          <div className="form-group">
+            <label>Municipal Secure Password</label>
+            <div className="input-with-icon">
+              <KeyRound size={16} />
+              <input 
+                type="password" 
+                placeholder="••••••••" 
+                value={password} 
+                onChange={(e) => setPassword(e.target.value)}
+                required
+              />
+            </div>
+          </div>
 
-          <button type="submit" className="login-submit-btn">
-            {success ? (
+          <button type="submit" className="login-submit-btn" disabled={status === 'loading'}>
+            {status === 'loading' ? (
               <span><CheckCircle2 size={18} /> Authenticating...</span>
             ) : (
               <span>Login to {selectedCity.shortBody} {role === 'citizen' ? 'User Portal' : role === 'operator' ? 'Command Center' : 'Field Worklist'} <ArrowRight size={16} /></span>
             )}
           </button>
         </form>
-
-        {/* Quick Demo Access Bar */}
-        <div className="quick-demo-section">
-          <span>Quick Demo One-Click Access:</span>
-          <div className="quick-demo-buttons">
-            <button onClick={() => handleQuickDemo('citizen')} className="demo-chip">
-              Demo Citizen
-            </button>
-            <button onClick={() => handleQuickDemo('operator')} className="demo-chip">
-              Demo Operator ({selectedCity.shortBody})
-            </button>
-            <button onClick={() => handleQuickDemo('officer')} className="demo-chip">
-              Demo Field Officer
-            </button>
-          </div>
-        </div>
 
         {/* Footer info */}
         <div className="login-footer">
