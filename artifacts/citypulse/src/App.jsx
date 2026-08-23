@@ -1,8 +1,8 @@
 import { useState } from 'react';
-import { QueryClient, QueryClientProvider, useQueryClient } from '@tanstack/react-query';
+import { QueryClient, QueryClientProvider, useQueryClient, useMutation } from '@tanstack/react-query';
 import { Route, Switch, Link, useLocation, useParams, Router as WouterRouter } from 'wouter';
 import { ArrowLeft, ArrowRight, Bell, Camera, Check, CircleAlert, ClipboardList, Clock3, Droplets, FileText, Filter, Gauge, ImagePlus, LayoutDashboard, LocateFixed, MapPin, Menu, MoreHorizontal, Navigation, Plus, Search, ShieldCheck, Sparkles, Target, Trash2, TreePine, UserRound, Users, Wrench, X, Zap, } from 'lucide-react';
-import { getGetAdminIncidentQueryKey, getListAdminIncidentsQueryKey, useAssignIncident, useCreateIncident, useGetAdminIncident, useGetAnalyticsCategories, useGetAnalyticsOverview, useGetIncident, useListAdminIncidents, useListMyIncidents, useListOfficerIncidents, useOverrideIncidentCategory, useOverrideIncidentPriority, useStartIncidentWork, useVerifyIncident, } from '@workspace/api-client-react';
+import { customFetch, getGetAdminIncidentQueryKey, getListAdminIncidentsQueryKey, useAssignIncident, useCreateIncident, useGetAdminIncident, useGetAnalyticsCategories, useGetAnalyticsOverview, useGetIncident, useListAdminIncidents, useListMyIncidents, useListOfficerIncidents, useOverrideIncidentCategory, useOverrideIncidentPriority, useStartIncidentWork, useVerifyIncident, } from '@workspace/api-client-react';
 import { ErrorBoundary } from '@/components/error-boundary';
 import { Toaster } from '@/components/ui/toaster';
 import { TooltipProvider } from '@/components/ui/tooltip';
@@ -34,6 +34,17 @@ function formatDate(value) {
 function useFallback(data, fallback) { return data ?? fallback; }
 function statusClass(status) { return `status status-${status.toLowerCase()}`; }
 function priorityClass(priority) { return `priority priority-${priority.toLowerCase()}`; }
+
+const useCreateIncidentFormData = () => {
+    return useMutation({
+        mutationFn: async (formData) => {
+            return customFetch('/api/v1/incidents', {
+                method: 'POST',
+                body: formData
+            });
+        }
+    });
+};
 function Brand({ compact = false }) {
     return <Link href="/" className={`brand ${compact ? 'brand-compact' : ''}`} data-testid="link-brand"><span className="brand-mark"><span /></span><span>citypulse</span></Link>;
 }
@@ -135,14 +146,33 @@ function ReportPage() {
     const [description, setDescription] = useState('');
     const [location, setLocation] = useState(false);
     const [sent, setSent] = useState(false);
-    const create = useCreateIncident();
+    const [imageFile, setImageFile] = useState(null);
+    const [imagePreview, setImagePreview] = useState(null);
+    const create = useCreateIncidentFormData();
+
+    const handleImageChange = (e) => {
+        const file = e.target.files[0];
+        if (file) {
+            setImageFile(file);
+            setImagePreview(URL.createObjectURL(file));
+        }
+    };
+
     const submit = () => {
-        create.mutate({ data: { imageUrl: 'citypulse-camera-capture', latitude: 19.076, longitude: 72.877, accuracy: 14, category: category, description } }, { onSuccess: () => setSent(true), onError: () => setSent(true) });
+        const formData = new FormData();
+        if (imageFile) formData.append('image', imageFile);
+        formData.append('latitude', 19.076);
+        formData.append('longitude', 72.877);
+        formData.append('accuracy', 14);
+        formData.append('category', category);
+        if (description) formData.append('description', description);
+        
+        create.mutate(formData, { onSuccess: () => setSent(true), onError: () => setSent(true) });
     };
     if (sent)
         return <div className="public-page"><PublicNav /><main className="success-screen cp-wrap cp-fade"><div className="success-mark"><Check size={34}/></div><p className="eyebrow">Report received</p><h1>You're part of<br /><span>the fix.</span></h1><p className="success-copy">We've sent your report to the city team best placed to help. Keep this reference nearby.</p><div className="reference-card cp-card"><span className="small-label">YOUR REFERENCE</span><strong>CP-24082</strong><span>We’ll keep you posted as it moves.</span></div><div className="success-actions"><Link href="/incidents/CP-24082" className="pill-button" data-testid="button-view-submitted">Follow this report <ArrowRight size={15}/></Link><Link href="/incidents" className="ghost-link" data-testid="link-all-reports">See all my reports</Link></div></main></div>;
     return <div className="public-page"><PublicNav /><main className="report-page cp-wrap"><div className="report-head"><Link href="/" className="back-link" data-testid="link-report-back"><ArrowLeft size={15}/> Back</Link><span className="report-timer"><Clock3 size={14}/> under 60 seconds</span></div><div className="report-layout"><aside className="report-aside"><p className="eyebrow">A quick note to the city</p><h1>What needs<br /><span>attention?</span></h1><p>Share one thing you noticed. We’ll handle the routing.</p><div className="progress-rail"><span className={step >= 1 ? 'on' : ''}/><span className={step >= 2 ? 'on' : ''}/><span className={step >= 3 ? 'on' : ''}/></div></aside><section className="report-form cp-card cp-shadow">
-    {step === 1 && <div className="form-step cp-fade"><div className="form-step-title"><span>01 / 03</span><h2>Show us the spot</h2><p>A clear photo helps the right crew arrive prepared.</p></div><button className="upload-box" onClick={() => setStep(2)} data-testid="button-add-photo"><div className="upload-art"><ImagePlus size={22}/></div><strong>Add a photo</strong><span>Tap to use your camera or choose from photos</span></button><button className="location-row" onClick={() => setLocation(!location)} data-testid="button-use-location"><IconDisc><LocateFixed size={17}/></IconDisc><span><strong>{location ? 'Location pinned' : 'Use my location'}</strong><small>{location ? '19.0760° N, 72.8777° E · ±14 m' : 'We only use this to send help to the right place'}</small></span><span className={`toggle ${location ? 'toggle-on' : ''}`}><i /></span></button><button className="form-next pill-button" onClick={() => setStep(2)} data-testid="button-report-next-1">Continue <ArrowRight size={15}/></button></div>}
+    {step === 1 && <div className="form-step cp-fade"><div className="form-step-title"><span>01 / 03</span><h2>Show us the spot</h2><p>A clear photo helps the right crew arrive prepared.</p></div><label className="upload-box" data-testid="button-add-photo"><input type="file" accept="image/jpeg,image/png,image/webp" capture="environment" onChange={handleImageChange} style={{display: 'none'}} />{imagePreview ? <img src={imagePreview} style={{width: '100%', height: '100%', objectFit: 'cover', borderRadius: '12px'}} /> : <><div className="upload-art"><ImagePlus size={22}/></div><strong>Add a photo</strong><span>Tap to use your camera or choose from photos</span></>}</label><button className="location-row" onClick={() => setLocation(!location)} data-testid="button-use-location"><IconDisc><LocateFixed size={17}/></IconDisc><span><strong>{location ? 'Location pinned' : 'Use my location'}</strong><small>{location ? '19.0760° N, 72.8777° E · ±14 m' : 'We only use this to send help to the right place'}</small></span><span className={`toggle ${location ? 'toggle-on' : ''}`}><i /></span></button><button className="form-next pill-button" onClick={() => { if (!imageFile) { alert('Please select a photo first'); return; } setStep(2); }} data-testid="button-report-next-1">Continue <ArrowRight size={15}/></button></div>}
     {step === 2 && <div className="form-step cp-fade"><button className="form-back" onClick={() => setStep(1)} data-testid="button-report-back-2"><ArrowLeft size={15}/> Back</button><div className="form-step-title"><span>02 / 03</span><h2>Help us understand</h2><p>Choose the closest match. You can add context in your own words.</p></div><div className="category-grid">{[['POTHOLE', 'Pothole', Wrench], ['WATERLOGGING', 'Waterlogging', Droplets], ['GARBAGE', 'Garbage', Trash2], ['BROKEN_STREETLIGHT', 'Streetlight', Zap], ['FALLEN_TREE', 'Fallen tree', TreePine], ['OTHER', 'Something else', MoreHorizontal]].map(([value, label, I]) => <button key={value} className={`category-option ${category === value ? 'selected' : ''}`} onClick={() => setCategory(value)} data-testid={`button-category-${value}`}><span><I size={17}/></span>{label}{category === value && <Check size={14}/>}</button>)}</div><label className="field-label" htmlFor="report-description">Anything else to add? <span>optional</span></label><textarea id="report-description" value={description} onChange={(e) => setDescription(e.target.value)} placeholder="For example: it gets worse after rain..." data-testid="input-report-description"/><button className="form-next pill-button" onClick={() => setStep(3)} data-testid="button-report-next-2">Continue <ArrowRight size={15}/></button></div>}
     {step === 3 && <div className="form-step cp-fade"><button className="form-back" onClick={() => setStep(2)} data-testid="button-report-back-3"><ArrowLeft size={15}/> Back</button><div className="form-step-title"><span>03 / 03</span><h2>Ready to send?</h2><p>We’ll use your photo and location only to route this report.</p></div><div className="review-card"><div className="review-photo"><Camera size={20}/><span>Photo attached</span></div><div className="review-line"><span>Issue</span><strong>{categoryLabels[category]}</strong></div><div className="review-line"><span>Location</span><strong>{location ? 'Pinned to your location' : 'Mumbai, Maharashtra'}</strong></div><div className="review-line"><span>Details</span><strong>{description || 'No extra details'}</strong></div></div><button className="form-next pill-button" onClick={submit} disabled={create.isPending} data-testid="button-submit-report">{create.isPending ? 'Sending report…' : 'Send report'} <ArrowRight size={15}/></button><p className="privacy-note"><ShieldCheck size={13}/> Your report is visible to you and the city team.</p></div>}
   </section></div></main></div>;
