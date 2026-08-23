@@ -200,7 +200,11 @@ function IncidentRow({ incident, officer = false, operator = false }) {
     const ref = incident.incidentNumber || incident.incidentId;
     const cat = incident.category ? (categoryLabels[incident.category] || incident.category) : 'Under Review';
     const reportedDate = incident.reportedAt || incident.createdAt;
-    const priority = incident.priority || 'LOW';
+    
+    // Show AI severity if priority is unassigned or default LOW
+    const aiSeverity = incident.aiAnalysis?.severityLabel?.toUpperCase();
+    const priority = (incident.priority && incident.priority !== 'LOW') ? incident.priority : (aiSeverity || incident.priority || 'LOW');
+    
     const status = incident.status || 'SUBMITTED';
 
     const targetUrl = operator 
@@ -256,6 +260,9 @@ function AssignmentPanel({ incident, id, onToast }) {
         assign.mutate({
             incidentId: id,
             data: {
+                department: 'Public Works',
+                division: 'Roads & Infrastructure',
+                team: team,
                 notes: `Dispatched to ${team}`
             }
         }, {
@@ -335,7 +342,7 @@ function AdminPage() {
     const [search, setSearch] = useState('');
     const [filter, setFilter] = useState('All');
     const [activeTab, setActiveTab] = useState('Queue');
-    const visible = items.filter((i) => (filter === 'All' || (i.priority || 'LOW') === filter.toUpperCase() || (filter === 'Open' && !['RESOLVED', 'CLOSED'].includes(i.status))) && `${i.incidentNumber || i.incidentId} ${i.description} ${categoryLabels[i.category] || i.category}`.toLowerCase().includes(search.toLowerCase()));
+    const visible = items.filter((i) => (filter === 'All' || (i.priority || 'LOW') === filter.toUpperCase() || (filter === 'Open' && !['RESOLVED', 'CLOSED'].includes(i.status))) && `${i.incidentNumber || i.incidentId} ${i.description} ${categoryLabels[i.category] || i.category}`.toLowerCase().includes(search.toLowerCase())).sort((a, b) => new Date(b.createdAt || b.reportedAt || 0) - new Date(a.createdAt || a.reportedAt || 0));
     return <div className="ops-page"><OpsNav role="operator"/><main className="admin-page"><div className="admin-wrap"><div className="admin-head"><div><p className="eyebrow">Wednesday · 18 June 2024</p><h1>Good morning, Aarav.</h1><p>Here’s what needs a city team’s attention today.</p></div><button className="outline-button" onClick={() => query.refetch()} data-testid="button-refresh-queue"><Clock3 size={15}/>Updated just now</button></div><div className="kpi-grid"><KpiCard label="Reports this week" value={totalReports} detail="+12.8% from last week" icon={<ClipboardList size={17}/>}/><KpiCard label="Open incidents" value={openCount} detail={`${openCount} active in queue`} icon={<CircleAlert size={17}/>} tone="kpi-warm"/><KpiCard label="Critical signals" value={criticalCount} detail={`${overview.overdueIncidents} need urgent action`} icon={<Zap size={17}/>}/><KpiCard label="Avg. resolution" value={avgRes} detail="Down 4.6h this month" icon={<Gauge size={17}/>}/></div><div className="admin-tabs">{['Queue', 'Analytics'].map((x) => <button key={x} className={activeTab === x ? 'selected' : ''} onClick={() => setActiveTab(x)} data-testid={`button-admin-tab-${x.toLowerCase()}`}>{x}</button>)}<span className="tab-spacer"/><button className="icon-button" aria-label="More dashboard options" data-testid="button-dashboard-options"><MoreHorizontal size={18}/></button></div>{activeTab === 'Queue' ? <div className="admin-grid"><section className="queue-card cp-card"><div className="queue-head"><div><span className="small-label">LIVE QUEUE</span><h2>Needs your call <span>{visible.length}</span></h2></div><button className="text-button" onClick={() => { setFilter('All'); setSearch(''); }} data-testid="button-clear-filters">Clear filters</button></div><div className="queue-tools"><div className="search-box"><Search size={16}/><input value={search} onChange={(e) => setSearch(e.target.value)} placeholder="Search reference or issue" aria-label="Search incidents" data-testid="input-admin-search"/></div><div className="filter-scroll">{['All', 'Open', 'Critical', 'High', 'Medium'].map((x) => <button key={x} className={filter === x ? 'selected' : ''} onClick={() => setFilter(x)} data-testid={`button-admin-filter-${x.toLowerCase()}`}><Filter size={13}/>{x}</button>)}</div></div>{query.isLoading ? <LoadingRows /> : query.isError && !query.data ? <ErrorState onRetry={() => query.refetch()}/> : visible.length ? <div className="admin-queue">{visible.map((i) => <IncidentRow key={i.incidentId || i.incidentNumber} incident={i} operator />)}</div> : <EmptyState title="The queue is clear" body="No incidents match these filters."/>}</section><section className="map-card cp-card"><div className="panel-heading"><span><MapPin size={16}/> Incident map</span><span className="small-label">MUMBAI · 24 WARDS</span></div><FauxMap items={items.slice(0, 5)}/><div className="map-foot"><span><i className="live-dot"/> Live</span><span>Last synced 2 min ago</span></div></section></div> : <AnalyticsPanel overview={overview} categories={cats.data?.categories || cats.data}/>}</div></main></div>;
 }
 function AnalyticsPanel({ overview, categories }) {
