@@ -254,25 +254,35 @@ function IncidentDetailPage({ operator = false, params: propParams }) {
 function AssignmentPanel({ incident, id, onToast }) {
     const qc = useQueryClient();
     const assign = useAssignIncident();
-    const [team, setTeam] = useState('Road Maintenance Team B');
+
+    const teamOptions = [
+        { label: 'Road Maintenance Team B (South Zone)', teamId: 'team-road-b', divisionId: 'div-roads', departmentId: 'dept-public-works' },
+        { label: 'Water & Drainage Unit C', teamId: 'team-water-c', divisionId: 'div-water', departmentId: 'dept-public-works' },
+        { label: 'Electrical Maintenance Team A', teamId: 'team-elec-a', divisionId: 'div-electrical', departmentId: 'dept-public-works' },
+        { label: 'Sanitation & Waste Crew D', teamId: 'team-sanit-d', divisionId: 'div-sanitation', departmentId: 'dept-environment' },
+        { label: 'Parks & Green Cover Unit', teamId: 'team-parks', divisionId: 'div-parks', departmentId: 'dept-environment' },
+    ];
+
+    const [selectedIdx, setSelectedIdx] = useState(0);
+    const selected = teamOptions[selectedIdx];
 
     const handleAssign = () => {
         assign.mutate({
             incidentId: id,
             data: {
-                department: 'Public Works',
-                division: 'Roads & Infrastructure',
-                team: team,
-                notes: `Dispatched to ${team}`
+                teamId: selected.teamId,
+                divisionId: selected.divisionId,
+                departmentId: selected.departmentId,
+                notes: `Dispatched to ${selected.label}`
             }
         }, {
             onSuccess: () => {
                 qc.invalidateQueries({ queryKey: getGetAdminIncidentQueryKey(id) });
                 qc.invalidateQueries({ queryKey: getListAdminIncidentsQueryKey() });
-                onToast(`Assigned to ${team} successfully!`);
+                onToast(`Assigned to ${selected.label} successfully!`);
             },
             onError: () => {
-                onToast(`Dispatched to ${team} (Recorded).`);
+                onToast(`Dispatched to ${selected.label} (Recorded).`);
             }
         });
     };
@@ -285,15 +295,11 @@ function AssignmentPanel({ incident, id, onToast }) {
             </div>
             <div style={{ display: 'flex', gap: '10px', marginTop: '12px', alignItems: 'center' }}>
                 <select 
-                    value={team} 
-                    onChange={(e) => setTeam(e.target.value)}
+                    value={selectedIdx} 
+                    onChange={(e) => setSelectedIdx(Number(e.target.value))}
                     style={{ flex: 1, padding: '10px 14px', borderRadius: '8px', border: '1px solid #e2e8f0', fontSize: '14px', background: '#fff' }}
                 >
-                    <option value="Road Maintenance Team B">Road Maintenance Team B (South Zone)</option>
-                    <option value="Solid Waste Clean Crew #4">Solid Waste Clean Crew #4 (Zone 8)</option>
-                    <option value="Electrical Repair Unit 1">Electrical Repair Unit 1 (Central)</option>
-                    <option value="Drainage & Water Team 3">Drainage & Water Team 3 (West)</option>
-                    <option value="Tree Pruning Rapid Unit">Tree Pruning Rapid Unit (North)</option>
+                    {teamOptions.map((opt, i) => <option key={i} value={i}>{opt.label}</option>)}
                 </select>
                 <button 
                     className="pill-button" 
