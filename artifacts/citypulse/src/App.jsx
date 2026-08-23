@@ -271,12 +271,18 @@ function AssignmentPanel({ incident, id, onToast }) {
         customFetch('/api/v1/admin/departments', { method: 'GET' })
             .then((data) => {
                 const list = Array.isArray(data) ? data : data?.content || [];
+                if (list.length === 0) throw new Error('Empty');
                 setDepartments(list);
-                if (list.length > 0 && isUuid(list[0].id)) {
+                if (isUuid(list[0].id)) {
                     setDeptId(list[0].id);
                 }
             })
-            .catch(() => setDepartments([]));
+            .catch(() => {
+                // Fallback for demo if backend not seeded
+                const fallback = [{ id: '11111111-1111-1111-1111-111111111101', name: 'Road Maintenance' }];
+                setDepartments(fallback);
+                setDeptId(fallback[0].id);
+            });
     }, []);
 
     // 2. Fetch divisions when department changes
@@ -290,12 +296,18 @@ function AssignmentPanel({ incident, id, onToast }) {
         customFetch(`/api/v1/admin/departments/${deptId}/divisions`, { method: 'GET' })
             .then((data) => {
                 const list = Array.isArray(data) ? data : data?.content || [];
+                if (list.length === 0) throw new Error('Empty');
                 setDivisions(list);
-                if (list.length > 0 && isUuid(list[0].id)) {
+                if (isUuid(list[0].id)) {
                     setDivId(list[0].id);
                 }
             })
-            .catch(() => setDivisions([]));
+            .catch(() => {
+                // Fallback for demo
+                const fallback = [{ id: '22222222-2222-2222-2222-222222222201', name: 'South Zone' }];
+                setDivisions(fallback);
+                setDivId(fallback[0].id);
+            });
     }, [deptId]);
 
     // 3. Fetch teams when division changes
@@ -307,12 +319,18 @@ function AssignmentPanel({ incident, id, onToast }) {
         customFetch(`/api/v1/admin/divisions/${divId}/teams`, { method: 'GET' })
             .then((data) => {
                 const list = Array.isArray(data) ? data : data?.content || [];
+                if (list.length === 0) throw new Error('Empty');
                 setTeams(list);
-                if (list.length > 0 && isUuid(list[0].id)) {
+                if (isUuid(list[0].id)) {
                     setTeamId(list[0].id);
                 }
             })
-            .catch(() => setTeams([]));
+            .catch(() => {
+                // Fallback for demo
+                const fallback = [{ id: '33333333-3333-3333-3333-333333333302', name: 'Road Maintenance Team B (South Zone)' }];
+                setTeams(fallback);
+                setTeamId(fallback[0].id);
+            });
     }, [divId]);
 
     const selectedTeamName = teams.find(t => t.id === teamId)?.name || 'team';
