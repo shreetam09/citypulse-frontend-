@@ -40,8 +40,9 @@ export default defineConfig({
         allowedHosts: true,
         proxy: {
             '/api': {
-                target: 'http://localhost:5050',
+                target: 'https://citypulse-backend-jy2v.onrender.com',
                 changeOrigin: true,
+                secure: false,
             },
         },
         fs: {
