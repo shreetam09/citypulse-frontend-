@@ -693,7 +693,7 @@ function Router() {
         <Route path="/incidents/:id">{(params) => <CitizenRouteGuard component={IncidentDetailPage} params={params} />}</Route>
 
         {/* Protected Municipal Command Center & Admin Routes */}
-        <Route path="/admin" component={(props) => <OperatorRouteGuard component={AdminDashboard} {...props} />}/>
+        <Route path="/admin" component={(props) => <OperatorRouteGuard component={AdminPage} {...props} />}/>
         <Route path="/admin/officers" component={(props) => <OperatorRouteGuard component={OfficersPage} {...props} />}/>
         <Route path="/analytics" component={(props) => <OperatorRouteGuard component={AnalyticsPage} {...props} />}/>
         <Route path="/admin/incidents/:id">{(params) => <OperatorRouteGuard component={IncidentDetailPage} operator params={params} />}</Route>
