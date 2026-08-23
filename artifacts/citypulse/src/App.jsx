@@ -152,7 +152,7 @@ function IncidentRow({ incident, officer = false }) {
 }
 function IncidentsPage() {
     const query = useListMyIncidents();
-    const data = useFallback(query.data, seeded.slice(0, 4));
+    const data = useFallback(query.data?.content || query.data, seeded.slice(0, 4));
     const [filter, setFilter] = useState('All reports');
     const shown = filter === 'All reports' ? data : data.filter((x) => filter === 'Open' ? !['RESOLVED', 'CLOSED'].includes(x.status) : x.status === 'RESOLVED');
     return <div className="public-page"><PublicNav /><main className="cp-wrap list-page"><div className="list-head"><div><p className="eyebrow">Your civic trail</p><h1>My reports</h1><p>Every report has a reference. Every reference has a next step.</p></div><Link href="/report" className="pill-button" data-testid="button-list-new-report"><Plus size={16}/>New report</Link></div><div className="list-tabs">{['All reports', 'Open', 'Resolved'].map((x) => <button key={x} className={filter === x ? 'selected' : ''} onClick={() => setFilter(x)} data-testid={`button-filter-${x.toLowerCase().replace(' ', '-')}`}>{x}<span>{x === 'All reports' ? data.length : shown.filter((i) => x === 'Open' ? !['RESOLVED', 'CLOSED'].includes(i.status) : i.status === 'RESOLVED').length}</span></button>)}</div>{query.isLoading ? <LoadingRows /> : query.isError && !query.data ? <ErrorState onRetry={() => query.refetch()}/> : shown.length ? <div className="incident-list">{shown.map((incident) => <IncidentRow key={incident.incidentId} incident={incident}/>)}</div> : <EmptyState title="No reports match this view" body="Try another filter or make a new report."/>}</main></div>;
@@ -188,7 +188,7 @@ function AdminPage() {
     const query = useListAdminIncidents();
     const analytics = useGetAnalyticsOverview();
     const cats = useGetAnalyticsCategories();
-    const items = useFallback(query.data, seeded);
+    const items = useFallback(query.data?.content || query.data, seeded);
     const overview = useFallback(analytics.data, { totalIncidents: 184, openIncidents: 126, criticalIncidents: 12, overdueIncidents: 9, avgResolutionHours: 31.4 });
     const [search, setSearch] = useState('');
     const [filter, setFilter] = useState('All');
@@ -202,7 +202,7 @@ function AnalyticsPanel({ overview, categories }) {
 }
 function OfficerPage() {
     const query = useListOfficerIncidents();
-    const items = useFallback(query.data, seeded.filter((x) => x.status !== 'RESOLVED'));
+    const items = useFallback(query.data?.content || query.data, seeded.filter((x) => x.status !== 'RESOLVED'));
     const [filter, setFilter] = useState('Today');
     const [dutyState, setDutyState] = useState('ON_DUTY'); // 'ON_DUTY' | 'OFF_DUTY'
     const [showAuthModal, setShowAuthModal] = useState(false);
